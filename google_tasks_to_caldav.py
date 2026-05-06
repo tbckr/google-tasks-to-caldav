@@ -209,6 +209,11 @@ def main() -> int:
                         help="CalDAV username (e.g. you@example.com)")
     parser.add_argument("--list-prefix", default="",
                         help="Optional prefix prepended to created task list names")
+    parser.add_argument("--rename", action="append", default=[], metavar="OLD=NEW",
+                        help="Override the CalDAV target list name for a Google list. "
+                             "Repeatable. Match is exact (trimmed) on the Google list title. "
+                             "When matched, --list-prefix is NOT applied. "
+                             "Example: --rename 'Meine Aufgaben=Aufgaben'")
     parser.add_argument("--only-list", default=None,
                         help="If set, only import the Google list with this exact title")
     parser.add_argument("--dry-run", action="store_true",
@@ -222,6 +227,16 @@ def main() -> int:
     if not args.dry_run and not args.url:
         sys.stderr.write("--url is required (or set CALDAV_URL).\n")
         return 1
+
+    rename_map: dict[str, str] = {}
+    for entry in args.rename:
+        if "=" not in entry:
+            parser.error(f"--rename expects OLD=NEW, got: {entry!r}")
+        old, new = entry.split("=", 1)
+        old, new = old.strip(), new.strip()
+        if not old or not new:
+            parser.error(f"--rename OLD and NEW must both be non-empty: {entry!r}")
+        rename_map[old] = new
 
     with args.input.open(encoding="utf-8") as fh:
         data = json.load(fh)
@@ -245,7 +260,10 @@ def main() -> int:
         if args.only_list and original_name != args.only_list:
             continue
 
-        list_name = (args.list_prefix + original_name).strip()
+        if original_name in rename_map:
+            list_name = rename_map[original_name]
+        else:
+            list_name = (args.list_prefix + original_name).strip()
         tasks = tasklist.get("items") or []
         print(f"\nList: {list_name}  ({len(tasks)} tasks)")
 

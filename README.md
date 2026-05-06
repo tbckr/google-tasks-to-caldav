@@ -39,6 +39,7 @@ Flags:
 | `--url` / `-u`   | CalDAV base URL (or set `$CALDAV_URL`) |
 | `--user`         | CalDAV username (usually your full email) |
 | `--list-prefix`  | Optional prefix prepended to created list names |
+| `--rename`       | Override target list name: `--rename 'OLD=NEW'` (repeatable) |
 | `--only-list`    | Import a single Google list by exact title |
 | `--dry-run`      | Parse and convert without contacting the server |
 
@@ -62,6 +63,21 @@ manually first:
    whitespace is trimmed).
 3. Repeat for every Google list. Tip: use `--only-list "My List"` to test
    one list end-to-end before doing the rest.
+
+If your provider has a built-in list whose name you cannot change (mailbox.org
+ships a default *Aufgaben* / *Tasks* list, for example), use `--rename` to map
+your Google list onto it:
+
+```bash
+uv run google-tasks-to-caldav \
+    --input Tasks.json \
+    --user  you@mailbox.org \
+    --rename 'Meine Aufgaben=Aufgaben'
+```
+
+`--rename` is repeatable, matches the Google list title exactly (after
+trimming), and — when it matches — replaces the target name 1:1, ignoring
+`--list-prefix`.
 
 **Run the import.**
 
